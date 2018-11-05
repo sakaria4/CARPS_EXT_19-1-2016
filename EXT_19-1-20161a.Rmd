@@ -1,0 +1,228 @@
+---
+title: "CARPS Reproducibility Report"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+# Report Details
+
+
+```{r}
+articleID <- "EXT_19-1-2016" # insert the article ID code here e.g., "10-3-2015_PS"
+reportType <- 'pilot' # specify whether this is the 'pilot' report or 'final' report
+pilotNames <- "Sakaria Auelua-Toomey" # insert the pilot's name here e.g., "Tom Hardwicke".  If there are multiple cpilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
+copilotNames <- NA # # insert the co-pilot's name here e.g., "Michael Frank". If there are multiple co-pilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
+pilotTTC <- '120' # insert the pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
+copilotTTC <- NA # insert the co-pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
+pilotStartDate <- as.Date("11/03/18", format = "%m/%d/%y") # insert the pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+copilotStartDate <- NA # insert the co-pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+completionDate <- as.Date("11/04/18", format = "%m/%d/%y") # copilot insert the date of final report completion (after any necessary rounds of author assistance) in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+```
+
+------
+
+#### Methods summary: 
+
+84 participants were recruited through MTurk and paid $1 each for their participation. (44 Women, 40 men; mean age = 33.23 years, SD = 12.17)
+
+Participants had to be 18 or older, had to reside in the US, and had to be native English speakers. 
+
+Participants were given a hypothetical resource-distribution negoation situation adapted from Kuhlman and Marshello (1975) with a hypothetical other person. 
+
+Participants were asked to either choose "Option A/Agreement" or "OptionB/Impasse"
+
+Framed Conditions framed the reposnses as Agreement and Impasse.
+
+Control Condition framed the responses as Option A and Option B.
+
+Response frequencies for OptionA/Agreement and OptionB/Impasse were measured. 
+
+
+------
+
+#### Target outcomes: 
+
+EXT_19-1-2016
+
+For this article you should focus on the findings reported in the results section for Study 1a.
+
+Specifically, you should attempt to reproduce all descriptive and inferential analyses reported in the text below and associated tables/figures:
+
+> We calculated the average
+response score for the allocation decisions for each
+participant and found that those in the control condition selected the personally disadvantageous option (i.e., “Option A”) 33.88% of the time (SD = 31%), while those in the framed condition selected this option (i.e., “Agreement”) 47.90% of the time (SD = 33%). This difference was statistically significant, t(82) = 2.00, p = .049.3 As predicted, we found that the lower individual point allocation was selected more often when it was labeled “Agreement” rather than “Option A” (see Fig. 1).
+
+**Note**
+Make sure to use the original article for additional context and information about any necessary pre-processing steps. Also check for additional supplementary materials that may provide supporting documentation for analysis procedures.
+
+
+------
+
+
+```{r global_options, include=FALSE}
+# sets up some formatting options for the R Markdown document
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+# Step 1: Load packages and prepare report object
+
+
+```{r}
+# load packages
+library(tidyverse) # for data munging
+library(knitr) # for kable table formating
+library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
+library(readxl) # import excel files
+library(CARPSreports) # custom report functions
+```
+
+
+```{r}
+# Prepare report object. This will be updated automatically by the reproCheck function each time values are compared
+reportObject <- data.frame(dummyRow = TRUE, reportedValue = NA, obtainedValue = NA, valueType = NA, percentageError = NA, comparisonOutcome = NA, eyeballCheck = NA)
+```
+
+# Step 2: Load data
+
+```{r}
+setwd("C:/Users/sakar/Desktop/CARPS_EXT_19-1-2016/data")
+study1a_raw_df <- read_spss("Study\ 1a\ Fixed\ Pie.sav")
+
+View(study1a_raw_df)
+```
+
+# Step 3: Tidy data
+
+```{r}
+#no tidying was required
+```
+
+# Step 4: Run analysis
+
+## Pre-processing
+
+
+```{r}
+#one participant had a missing response in cq5 column. But this dataset was not used for the reproduced analysis.
+clean_df <- study1a_raw_df %>%
+  filter(!is.na(cq5))
+
+```
+
+## Descriptive statistics
+### Means and SDs
+
+```{r}
+control_df <- study1a_raw_df %>%
+  filter(condition == "Control")
+
+#subtracting by 1 to get the reported option A means
+controlMean <- 1 -mean(control_df$cqmean_A)
+controlSD <- sd(control_df$cqmean_A)
+
+experiment_df <- study1a_raw_df %>%
+  filter(condition == "Agreement")
+experimentMean <- 1 - mean(experiment_df$cqmean_A)
+experimentSD <- sd(experiment_df$cqmean_A)
+
+print(controlMean)
+print(controlSD)
+print(experimentMean)
+print(experimentSD)
+
+reportObject <- reproCheck(reportedValue = '.3388', obtainedValue = controlMean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '.31', obtainedValue = controlSD, valueType = 'sd')
+reportObject <- reproCheck(reportedValue = '.479', obtainedValue = experimentMean, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = '.33', obtainedValue = experimentSD, valueType = 'sd')
+
+
+
+
+
+```
+
+## Inferential statistics
+### t-test and p-values 
+
+```{r}
+t.test(control_df$cqmean_A, experiment_df$cqmean_A)
+
+obtainedt <- 2.0057
+obtainedp <- 0.04819
+
+reportObject <- reproCheck(reportedValue = '2', obtainedValue = obtainedt, valueType = 't')
+reportObject <- reproCheck(reportedValue = '.049', obtainedValue = obtainedp, valueType = 'p')
+
+```
+
+# Step 5: Conclusion
+
+There was only a minor rounding error in the reported p value of the t-test. There was also 1 NA response that was included in the analysis in column cq5.
+  
+
+```{r}
+Author_Assistance = FALSE # was author assistance provided? (if so, enter TRUE)
+
+Insufficient_Information_Errors <- 0 # how many discrete insufficient information issues did you encounter?
+
+# Assess the causal locus (discrete reproducibility issues) of any reproducibility errors. Note that there doesn't necessarily have to be a one-to-one correspondance between discrete reproducibility issues and reproducibility errors. For example, it could be that the original article neglects to mention that a Greenhouse-Geisser correct was applied to ANOVA outcomes. This might result in multiple reproducibility errors, but there is a single causal locus (discrete reproducibility issue).
+
+locus_typo <- NA # how many discrete issues did you encounter that related to typographical errors?
+locus_specification <- NA # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
+locus_analysis <- NA # how many discrete issues did you encounter that related to errors in the authors' original analyses?
+locus_data <- NA # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
+locus_unidentified <- NA # how many discrete issues were there for which you could not identify the cause
+
+# How many of the above issues were resolved through author assistance?
+locus_typo_resolved <- NA # how many discrete issues did you encounter that related to typographical errors?
+locus_specification_resolved <- NA # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
+locus_analysis_resolved <- NA # how many discrete issues did you encounter that related to errors in the authors' original analyses?
+locus_data_resolved <- NA # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
+locus_unidentified_resolved <- NA # how many discrete issues were there for which you could not identify the cause
+
+Affects_Conclusion <- NA # Do any reproducibility issues encounter appear to affect the conclusions made in the original article? TRUE, FALSE, or NA. This is a subjective judgement, but you should taking into account multiple factors, such as the presence/absence of decision errors, the number of target outcomes that could not be reproduced, the type of outcomes that could or could not be reproduced, the difference in magnitude of effect sizes, and the predictions of the specific hypothesis under scrutiny.
+```
+
+
+```{r}
+reportObject <- reportObject %>%
+  filter(dummyRow == FALSE) %>% # remove the dummy row
+  select(-dummyRow) %>% # remove dummy row designation
+  mutate(articleID = articleID) %>% # add variables to report 
+  select(articleID, everything()) # make articleID first column
+
+# decide on final outcome
+if(any(reportObject$comparisonOutcome %in% c("MAJOR_ERROR", "DECISION_ERROR")) | Insufficient_Information_Errors > 0){
+  finalOutcome <- "Failure without author assistance"
+  if(Author_Assistance == T){
+    finalOutcome <- "Failure despite author assistance"
+  }
+}else{
+  finalOutcome <- "Success without author assistance"
+  if(Author_Assistance == T){
+    finalOutcome <- "Success with author assistance"
+  }
+}
+
+# collate report extra details
+reportExtras <- data.frame(articleID, pilotNames, copilotNames, pilotTTC, copilotTTC, pilotStartDate, copilotStartDate, completionDate, Author_Assistance, finalOutcome, Insufficient_Information_Errors, locus_typo, locus_specification, locus_analysis, locus_data, locus_unidentified, locus_typo_resolved, locus_specification_resolved, locus_analysis_resolved, locus_data_resolved, locus_unidentified_resolved)
+
+# save report objects
+if(reportType == "pilot"){
+  write_csv(reportObject, "pilotReportDetailed.csv")
+  write_csv(reportExtras, "pilotReportExtras.csv")
+}
+
+if(reportType == "final"){
+  write_csv(reportObject, "finalReportDetailed.csv")
+  write_csv(reportExtras, "finalReportExtras.csv")
+}
+```
+
+# Session information
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
